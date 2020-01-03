@@ -1,8 +1,15 @@
 package main
 
+/*
+extern void disableRawMode();
+extern void enableRawMode();
+*/
+import "C"
+
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 var (
@@ -22,6 +29,7 @@ const (
 
 func main() {
 	initShell()
+	replLoop()
 }
 
 func initShell() {
@@ -30,5 +38,17 @@ func initShell() {
 		fmt.Printf(ERRFORMAT, err.Error())
 	}
 
-	println(wd)
+	wdSlice := strings.Split(wd, "/")
+	os.Setenv("CWD", wdSlice[len(wdSlice)-1])
+}
+
+func replLoop() {
+	status := 1
+	// reader := bufio.NewReader(os.Stdin)
+
+	for status != 0 {
+		C.enableRawMode()
+		symbol := "\u2713"
+		fmt.Printf("\033[36msesh \033[33m%s \033[36m%s \033[m", os.Getenv("CWD"), symbol)
+	}
 }
