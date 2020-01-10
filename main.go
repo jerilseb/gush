@@ -51,7 +51,7 @@ func replLoop() {
 		C.enableRawMode()
 		symbol := "\u2713"
 		fmt.Printf("\033[36mgush \033[33m%s \033[36m%s \033[m", os.Getenv("CWD"), symbol)
-		line, shellEditor := "", false
+		line, cursorPos, shellEditor := "", 0, false
 
 		for {
 			c, _ := reader.ReadByte()
@@ -67,6 +67,43 @@ func replLoop() {
 			if c == 27 {
 				fmt.Println("Exiting...")
 				exit()
+			}
+
+			// backspace was pressed
+			if c == 127 {
+				if cursorPos > 0 {
+					if cursorPos != len(line) {
+						temp, oldLength := line[cursorPos:], len(line)
+						fmt.Printf("\b\033[K%s", temp)
+						for oldLength != cursorPos {
+							fmt.Printf("\033[D")
+							oldLength--
+						}
+						line = line[:cursorPos-1] + temp
+						cursorPos--
+					} else {
+						fmt.Print("\b\033[K")
+						line = line[:len(line)-1]
+						cursorPos--
+					}
+				}
+				continue
+			}
+
+			// Any normal character
+			if cursorPos == len(line) {
+				fmt.Printf("%c", c)
+				line += string(c)
+				cursorPos = len(line)
+			} else {
+				temp, oldLength := line[cursorPos:], len(line)
+				fmt.Printf("\033[K%c%s", c, temp)
+				for oldLength != cursorPos {
+					fmt.Printf("\033[D")
+					oldLength--
+				}
+				line = line[:cursorPos] + string(c) + temp
+				cursorPos++
 			}
 
 			// the enter key was pressed
